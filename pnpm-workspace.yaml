@@ -1,0 +1,23 @@
+allowBuilds:
+  '3': true
+  ',': true
+  '-': true
+  /: true
+  '@': true
+  '@prisma/engines': false
+  a: true
+  b: true
+  better-sqlite3: false
+  e: true
+  fallow: false
+  g: true
+  i: true
+  l: true
+  m: true
+  n: true
+  p: true
+  prisma: false
+  q: true
+  r: true
+  s: true
+  t: true

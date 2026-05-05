@@ -1,0 +1,15 @@
+[promise]
+follow_up_order = ["content", "target", "due_time"]
+max_follow_up_rounds = 6
+context_timeout = 1800
+default_time = "20:00"
+default_date = "today"
+on_max_rounds = "fail"
+reminder_lead_time = 15
+max_defer_count = 6
+retention_days = 30
+list_sort_by = "due_time"
+list_sort_order = "asc"
+defer_options_file = "config/copy/promise_defer_options.md"
+reminder_template_file = "config/copy/promise_reminder.md"
+questions_template_file = "config/copy/promise_questions.md"

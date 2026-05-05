@@ -1,0 +1,107 @@
+{
+  "version": "1.0",
+  "generated": "2026-05-04T16:01:42.565Z",
+  "git_commit": null,
+  "active_changes": [
+    "profilegen-implementation"
+  ],
+  "stats": {
+    "totalFiles": 2,
+    "totalModules": 2,
+    "totalSections": 8
+  },
+  "modules": {
+    "docs": {
+      "file": ".ospec/docs/SKILL.md",
+      "title": "fuka 文档中心",
+      "tags": [
+        "docs",
+        "project",
+        "planning",
+        "api"
+      ],
+      "sections": {
+        "文档中心": {
+          "level": 1,
+          "title": "文档中心",
+          "start": 1,
+          "end": 29
+        },
+        "文档导航": {
+          "level": 2,
+          "title": "文档导航",
+          "start": 29,
+          "end": 451
+        }
+      }
+    },
+    "fuka": {
+      "file": ".ospec/SKILL.md",
+      "title": "fuka",
+      "tags": [
+        "ospec",
+        "project",
+        "full"
+      ],
+      "sections": {
+        "fuka": {
+          "level": 1,
+          "title": "fuka",
+          "start": 1,
+          "end": 28
+        },
+        "项目概述": {
+          "level": 2,
+          "title": "项目概述",
+          "start": 28,
+          "end": 184
+        },
+        "技术栈": {
+          "level": 2,
+          "title": "技术栈",
+          "start": 184,
+          "end": 231
+        },
+        "项目架构": {
+          "level": 2,
+          "title": "项目架构",
+          "start": 231,
+          "end": 283
+        },
+        "目录导航": {
+          "level": 2,
+          "title": "目录导航",
+          "start": 283,
+          "end": 441
+        },
+        "插件阻断": {
+          "level": 2,
+          "title": "插件阻断",
+          "start": 441,
+          "end": 666
+        }
+      }
+    }
+  },
+  "tagIndex": {
+    "docs": [
+      "docs"
+    ],
+    "project": [
+      "docs",
+      "fuka"
+    ],
+    "planning": [
+      "docs"
+    ],
+    "api": [
+      "docs"
+    ],
+    "ospec": [
+      "fuka"
+    ],
+    "full": [
+      "fuka"
+    ]
+  }
+}
