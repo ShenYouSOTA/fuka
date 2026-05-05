@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model messages {
+  id        String   @id
+  user_id   String
+  group_id  String?
+  content   String
+  timestamp DateTime
+  created_at DateTime @default(now())
+}
+
+model promises {
+  id           String    @id
+  user_id      String
+  content      String
+  target_person String?
+  due_at       DateTime?
+  status       String    @default("pending")
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+}
+
+model interests {
+  id        String   @id
+  user_id   String
+  group_id  String?
+  topic     String
+  weight    Float    @default(0.5)
+  last_mentioned DateTime @default(now())
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model profiles {
+  id           String   @id
+  user_id      String
+  target_id    String
+  group_id     String?
+  summary      String
+  detailed     String?
+  confidence   Float
+  message_count Int     @default(0)
+  active_hours String  @default("[]")
+  top_topics   String  @default("[]")
+  generated_at DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@unique([user_id, target_id])
+}
+
+model interest_matches {
+  id          String   @id
+  user_id_1   String
+  user_id_2   String
+  group_id    String
+  shared_topics String @default("[]")
+  match_score Float
+  created_at  DateTime @default(now())
+}
+
+model trigger_logs {
+  id          String   @id
+  user_id     String
+  trigger_type String
+  payload     String
+  fired_at    DateTime @default(now())
+  status      String   @default("pending")
+}
