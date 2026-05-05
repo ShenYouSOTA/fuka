@@ -1,242 +1,493 @@
 # Fuka
 
-> agentic social memory for the present, not the organized
->
-> 智能社交统筹，登场游刃有余，人情往来不累
+> 登场游刃有余，人情往来不累
 
-QQ 社交 AI Agent，基于腾讯 PCG 校园 AI 产品创意大赛「赛题 3 - 用 AI 玩转 QQ 养虾」设计。
+**智能社交统筹 — 让用户在线上社交中更加自在，探索更多可能。**
 
-## 核心定位
+基于 QQ 消息流，主动追踪承诺、匹配同好、生成人物侧写，把社交记忆从「被动查询」变成「主动服务」。
 
-**智能社交统筹 — 让用户登场游刃有余，人情往来不累。**
+> 腾讯 PCG 校园 AI 产品创意大赛 · 赛题 3 · 用 AI 玩转 QQ 养虾
 
-Fuka 不只是"记住"，而是主动统筹你的社交关系：承诺不遗漏、同好不错过、初见有话说。
+---
 
-## 三个核心场景
+## 0. 项目定位
 
-### 场景 1：承诺追踪 — 答应的事，从不食言
-
-- **旧体验**：答应朋友的事，当时说了后来忘了，对方觉得自己被放鸽子
-- **Fuka 体验**：承诺自动提取、跨会话记忆、到期触发提醒 — 你只管说，Fuka 帮你记，登场时游刃有余
-- **关键能力**：承诺意图识别 + 跨会话持久化 + 时机触发
-
-### 场景 2：兴趣匹配 — 同好不错过，人情往来不累
-
-- **旧体验**：群里每天消息刷屏，真正感兴趣的人被淹没了
-- **Fuka 体验**：群消息持续分析，兴趣同好自动匹配推送 — 不用费心刷屏，缘分自然来
-- **关键能力**：兴趣标签提取 + 双向匹配 + 主动通知
-
-### 场景 3：侧写生成 — 登场即了解，破冰有底气
-
-- **旧体验**：群里加了一个人，不知道怎么破冰，不了解他
-- **Fuka 体验**：分析历史发言，生成一句话侧写 + 置信度 — 三句话就认识一个人，登场有底气
-- **关键能力**：历史消息聚合 + LLM 侧写 + 置信度评估
-
-## 架构设计
-
-### 数据模型
+**Fuka 是一个 OpenClaw 插件**，设计为开箱即用的 QQ 社交 AI Agent。
 
 ```
-用户社交数据（消息、承诺、关系）
-        ↓
-   [记忆层] → 承诺追踪 | 兴趣图谱 | 人物侧写
-        ↓
-   [触发层] → 时间触发 | 上下文触发 | 主动探测
-        ↓
-   [交互层] → 提醒 | 匹配推荐 | 侧写推送
+┌─────────────────────────────────────────────────────────┐
+│                      OpenClaw                           │
+│          （插件运行时 / 消息路由 / 生命周期管理）            │
+└─────────────────────────────────────────────────────────┘
+                           ↑
+                    Fuka Plugin
+         （承诺追踪 / 兴趣匹配 / 人物侧写）
 ```
 
-### 模块划分
+### 插件架构
 
-| 模块 | 职责 | 对应场景 |
-|------|------|---------|
-| `PromiseTracker` | 承诺提取、存储、到期提醒 | 场景 1 |
-| `InterestGraph` | 群消息分析、兴趣标签提取、匹配 | 场景 2 |
-| `ProfileGen` | 人物侧写生成、置信度评估 | 场景 3 |
+| 组件 | 说明 |
+|------|------|
+| `fuka-llm` | LLM Provider，用于意图解析和内容生成 |
+| `fuka-message` | Channel Provider，接入 QQ 消息流 |
+| 配置 Schema | 通过 `configSchema` 定义插件配置项 |
+
+### 快速接入
+
+```javascript
+// openclaw.config.js 或 openclaw.config.toml
+import fuka from 'fuka-plugin';
+
+export default {
+  plugins: [
+    fuka({
+      // 插件配置
+    })
+  ]
+}
+```
+
+---
+
+## 1. 产品概述
+
+### 1.1 故事
+
+我是一个想要和朋友社交，但也觉得社交比较累的人。有时候，会忘记关心和跟进朋友的近况；有时候，遇到了可能成为朋友的人，又会打退堂鼓。
+
+Fuka 就是为了解决这个问题而生的——帮助用户在线上社交中更加自在，探索更多可能。
+
+### 1.2 目标用户
+
+- **社恐型用户**：想社交但觉得累，不知道怎么开口
+- **疏忽型用户**：答应朋友的事容易忘，被觉得不靠谱
+- **探索型用户**：想认识新朋友，但不知道怎么破冰
+
+### 1.3 核心价值主张
+
+| 旧体验 | Fuka 体验 |
+|--------|-----------|
+| 答应的事后来忘了，被放鸽子 | 承诺自动提取，到期触发提醒 |
+| 群里刷屏，有趣的人被淹没 | 兴趣同好自动匹配推送 |
+| 加了新人不知道说什么 | 一句话侧写，三句话认识一个人 |
+
+### 1.4 契合比赛要求
+
+比赛要求「官方 Agent」具备主动感知场景、理解用户意图、贯穿于聊天/群聊/动态等核心流程的能力，实现从**被动响应**到**主动关怀**的范式转变。
+
+Fuka 正是基于这一理念设计：在用户还没有意识到需要之前，主动提供服务。
+
+---
+
+## 2. 用户需求分析
+
+### 2.1 三大核心场景
+
+#### 场景 1：承诺追踪 — 答应的事，从不食言
+
+**用户痛点**：答应朋友的事情，当时说了后来忘了，对方觉得自己被放鸽子。
+
+**需求本质**：承诺是一种社交契约，遗忘会伤害信任关系。用户需要的是一个「外脑」来帮助记忆和跟进。
+
+**Fuka 方案**：
+
+```
+用户：「记得提醒我健身」
+  ↓
+Fuka：「发给谁？什么时候？」
+  ↓
+用户：「@小明 下周三」
+  ↓
+Fuka：「记住了，小明下周三提醒你健身 ✅」
+  ↓
+到期当天推送：「今天是小明下周三，记得健身哦～」
+```
+
+#### 场景 2：兴趣匹配 — 同好不错过，人情往来不累
+
+**用户痛点**：群里每天消息刷屏，真正感兴趣的人被淹没了。
+
+**需求本质**：在线社交环境中，缘分靠刷出来，效率极低。用户需要的是「自动发现同好」的能力。
+
+**Fuka 方案**：
+
+```
+群消息持续分析，识别兴趣标签
+  ↓
+发现 A 喜欢 Rust，B 也提到 Rust
+  ↓
+Fuka：「你们都喜欢编程，要不要认识一下？」
+  ↓
+A 和 B 建立连接，缘分自然发生
+```
+
+#### 场景 3：人物侧写 — 登场即了解，破冰有底气
+
+**用户痛点**：群里加了一个人，不知道怎么破冰，不了解他。
+
+**需求本质**：新关系建立需要「信息基础」，而历史发言是最好的破冰素材。用户需要快速了解一个陌生人的「轮廓」。
+
+**Fuka 方案**：
+
+```
+分析目标人物的历史发言
+  ↓
+生成一句话侧写 + 置信度
+  ↓
+「这个人话不多但很靠谱，周末活跃，适合约线下」
+  ↓
+用户据此决定怎么开口破冰
+```
+
+### 2.2 需求本质提炼
+
+三个场景共享一个核心洞察：**社交累的本质不是「不想」，而是「信息不对称」和「记忆负担」**。
+
+Fuka 通过主动信息聚合和智能提醒，降低社交的认知负荷，让用户把精力放在真正重要的人际连接上。
+
+---
+
+## 3. 产品设计思路
+
+### 3.1 设计原则
+
+1. **主动服务**：不等用户问，主动感知、主动提醒
+2. **最小打扰**：只在该出现时出现，不刷存在感
+3. **可解释**：每个建议都附带置信度，让用户有判断依据
+4. **隐私友好**：数据本地处理，不上传敏感内容
+
+### 3.2 核心概念
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                      用户社交数据                         │
+│              （消息、承诺、关系、发言历史）                 │
+└─────────────────────────────────────────────────────────┘
+                           ↓
+┌─────────────────────────────────────────────────────────┐
+│                       记忆层                              │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
+│  │  承诺追踪    │  │  兴趣图谱    │  │  人物侧写    │ │
+│  └──────────────┘  └──────────────┘  └──────────────┘ │
+└─────────────────────────────────────────────────────────┘
+                           ↓
+┌─────────────────────────────────────────────────────────┐
+│                       触发层                              │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
+│  │  时间触发    │  │  上下文触发  │  │  主动探测    │ │
+│  └──────────────┘  └──────────────┘  └──────────────┘ │
+└─────────────────────────────────────────────────────────┘
+                           ↓
+┌─────────────────────────────────────────────────────────┐
+│                       交互层                              │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
+│  │  提醒        │  │  匹配推荐    │  │  侧写推送    │ │
+│  └──────────────┘  └──────────────┘  └──────────────┘ │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 3.3 设计亮点
+
+- **跨会话记忆**：承诺跨越会话周期，不受聊天窗口限制
+- **双向匹配**：不是单向推荐，而是找到「共同兴趣」触发连接
+- **置信度评估**：每个侧写都带置信度，用户自己判断要不要信
+
+---
+
+## 4. 功能架构
+
+### 4.1 模块划分
+
+| 模块 | 职责 | 场景 |
+|------|------|------|
+| `PromiseTracker` | 承诺提取、存储、到期提醒 | 承诺追踪 |
+| `InterestGraph` | 群消息分析、兴趣标签提取、匹配 | 兴趣匹配 |
+| `ProfileGen` | 人物侧写生成、置信度评估 | 人物侧写 |
 | `TriggerEngine` | 时间/上下文/主动触发调度 | 三场景共用 |
 | `MessagePipeline` | QQ 消息流接入、解析、存储 | 基础设施 |
 | `FukaBrain` | LLM 调度、意图分发、统一回复 | 核心胶水 |
 
-### 数据库（SQLite）
-
-通过 Prisma ORM 管理，数据库文件位于 `prisma/fuka.db`：
-
-- `messages` - 消息存储
-- `promises` - 承诺记录
-- `interests` - 兴趣标签
-- `profiles` - 人物侧写
-- `interest_matches` - 兴趣匹配记录
-- `trigger_logs` - 触发日志
-
-## 项目结构
+### 4.2 数据库设计（SQLite + Prisma）
 
 ```
-fuka/
-├── package.json
-├── tsconfig.json
-├── biome.json
-├── prisma.config.ts
-├── README.md
-├── cli/
-│   └── index.js                # 终端入口
-├── plugin/
-│   └── index.js                # OpenClaw 插件入口  ← NEW
-├── prisma/
-│   ├── schema.prisma            # Prisma schema（SQLite）
-│   └── fuka.db                 # SQLite 数据库文件
-├── prompts/
-│   ├── fuka-default.md          # 默认 tsundere 性格
-│   └── user-override-example.md # 用户覆盖示例
-├── src/
-│   ├── core/
-│   │   ├── FukaBrain.ts         # 核心调度
-│   │   ├── PromptManager.ts     # 性格覆盖合并
-│   │   └── index.ts
-│   ├── llm/
-│   │   └── client.ts            # LLM 调用封装
-│   ├── modules/
-│   │   ├── PromiseTracker/      # 场景 1
-│   │   ├── InterestGraph/       # 场景 2
-│   │   └── ProfileGen/          # 场景 3
-│   ├── pipeline/
-│   │   ├── message.ts           # 消息流处理
-│   │   └── storage.ts           # 数据库 CRUD
-│   ├── repository/
-│   │   └── *.ts                 # Prisma repository 层
-│   ├── trigger/
-│   │   └── engine.ts            # 触发调度引擎
-│   └── types/
-│       ├── core.ts
-│       └── index.ts
-└── tests/                       # 单元测试（按模块独立）
+messages        — 消息存储
+promises        — 承诺记录
+interests       — 兴趣标签
+profiles        — 人物侧写
+interest_matches — 兴趣匹配记录
+trigger_logs    — 触发日志
 ```
 
-## Agent 性格
+### 4.3 消息处理流程
 
-### 默认：毒舌傲娇型
-
-- **语气**：带点傲娇，该吐槽就吐槽，但内心关心用户
-- **主动**：不会一直等着用户问，会主动提醒、主动关心
-- **记忆强**：记住用户说过的所有事，尤其是承诺
-- **简洁**：话不多，但每句都有信息量
-
-### 用户覆盖机制
-
-用户可以通过 `agents.md` 覆盖 Fuka 的行为字段：
-
-```markdown
-# Fuka Override
-## 语气
-- 更柔和一点
-## 主动程度
-- 更主动一点
+```
+QQ 消息入口
+    ↓
+MessagePipeline（消息解析）
+    ↓
+LLM 意图识别（parseMessage）
+    ↓
+FukaBrain 路由分发
+    ├── promise → PromiseTracker（追问 → 存储 → 触发）
+    ├── interest → InterestGraph（打标签 → 匹配 → 推送）
+    └── profile_query → ProfileGen（分析 → 生成 → 返回）
+    ↓
+FukaResponse（回复用户）
 ```
 
-可覆盖字段：`tone`、`verbosity`、`extraversion`、`warmth`
+---
 
-## 开发阶段
+## 5. AI 能力详解
+
+### 5.1 承诺追踪
+
+**技术实现**：
+
+1. **意图识别**：LLM 分析消息，识别「承诺意图」（PromiseIntent.CREATE）
+2. **信息提取**：从自然语言中提取「承诺内容」「对象」「时间」三个字段
+3. **多轮追问**：信息不全时，主动向用户追问缺失字段
+4. **持久化存储**：承诺存入 SQLite，设置到期时间
+5. **定时触发**：TriggerEngine 定时扫描，到期推送提醒
+
+**技术难点**：
+
+- 自然语言中承诺的表达形式多样，「记得提醒我」和「我答应他了」结构不同
+- 追问需要保持上下文，跨多条消息跟踪状态
+- 到期时间的自然语言解析（如「下周三」「月底」「两周后」）
+
+### 5.2 兴趣匹配
+
+**技术实现**：
+
+1. **标签提取**：InterestTagger 分析群消息，提取兴趣标签（Rust/编程/音乐）
+2. **权重衰减**：标签权重随时间衰减，保持兴趣的「新鲜度」
+3. **双向匹配**：InterestMatcher 在群内寻找「共同兴趣」的用户对
+4. **主动推送**：InterestNotifier 发现匹配后，主动向双方推送通知
+
+**技术难点**：
+
+- 群消息噪声大，同一个词可能是不同意图（Rust 可能是语言，也可能是生物）
+- 权重衰减曲线的设计：太快导致兴趣失忆，太慢导致噪音积累
+- findMatches 的 repository 层支持尚未完成
+
+### 5.3 人物侧写
+
+**技术实现**：
+
+1. **活跃分析**：ProfileAnalyzer 统计发言时段、频率、活跃度
+2. **内容聚合**：收集目标用户的历史发言内容
+3. **LLM 生成**：ProfileGenerator 调用 LLM，生成一句话侧写
+4. **置信度计算**：ConfidenceCalculator 根据消息数量和时间窗口计算置信度
+
+**技术难点**：
+
+- LLM 调用目前是 mock 状态，需要替换为真实 API
+- 置信度公式的设计：消息越多越准确，但存在「刷屏用户」干扰
+- ProfileGen 需要 PrismaClient 注入，尚未完全接入
+
+---
+
+## 6. 原型说明
+
+### 6.1 承诺追踪对话流程
+
+```
+用户：记得提醒我健身
+Fuka：好的～这个提醒发给谁？（@谁）
+
+用户：@小明
+Fuka：收到！具体是什么时候呢？
+
+用户：下周三
+Fuka：记住了！小明下周三提醒你健身 ✅
+
+────────────── 到期推送 ──────────────
+
+Fuka：小明下周三到啦，今天记得健身哦～
+
+用户：好嘞
+Fuka：👍
+```
+
+### 6.2 兴趣匹配推送流程
+
+```
+群聊消息流
+  ↓
+Fuka 后台持续分析
+
+场景：检测到 A 和 B 都提到了「Rust」
+  ↓
+Fuka（私聊 A）：发现你们都喜欢「Rust 编程」，要不要认识一下？
+Fuka（私聊 B）：同上
+
+用户 A：好啊
+Fuka：那我拉你们认识～
+```
+
+### 6.3 人物侧写查询流程
+
+```
+用户：帮我看看 @新人 是什么样的人
+Fuka：让我想想～
+
+「这个人话不多但挺靠谱，晚上和周末比较活跃，
+  喜欢技术类话题，目前没有发现明显的兴趣重叠」
+
+置信度：中（约 20 条历史发言）
+
+用户：好，那我试试破冰
+Fuka：加油～有事叫我
+```
+
+---
+
+## 7. 落地规划
+
+### 7.1 Phase 路线图
 
 ```
 Phase 1: 基础设施 ✅
-├── MessagePipeline (消息接入 + 存储)
-├── DB Schema + 基础 CRUD (Prisma + SQLite)
-└── LLM Interface (消息解析 / 提取 / 生成)
+├── MessagePipeline（消息接入 + 存储）
+├── DB Schema + 基础 CRUD（Prisma + SQLite）
+└── LLM Interface（消息解析 / 提取 / 生成）
 
-Phase 2: 场景 1 - PromiseTracker ✅
-├── PromiseExtractor (承诺提取)
+Phase 2: 承诺追踪 ✅
+├── PromiseExtractor（承诺提取）
 ├── PromiseStorage + DueCheck
-├── TriggerEngine (定时提醒)
-└── PromiseTracker 追问流程已测试
+├── TriggerEngine（定时提醒）
+└── 多轮追问流程已跑通
 
-Phase 3: 场景 2 - InterestGraph ✅
-├── InterestTagger (兴趣标签提取 + 权重衰减)
-├── InterestMatcher (同好匹配)
-└── InterestNotifier (匹配通知)
+Phase 3: 兴趣匹配 ✅
+├── InterestTagger（兴趣标签提取 + 权重衰减）
+├── InterestMatcher（双向匹配）
+└── InterestNotifier（匹配通知）
 
-Phase 4: 场景 3 - ProfileGenerator ✅
-├── ProfileAnalyzer (活跃时段分析)
-├── ProfileGenerator (侧写生成)
-├── ConfidenceCalculator (置信度评估)
-└── ProfileGen 各子模块已测试
+Phase 4: 人物侧写 ✅
+├── ProfileAnalyzer（活跃时段分析）
+├── ProfileGenerator（LLM 侧写生成）
+├── ConfidenceCalculator（置信度评估）
+└── 各子模块单元测试全绿
 
-Phase 5: 集成 + CLI ✅
-├── FukaBrain 统一调度 (基础框架)
-├── CLI 终端界面 (可交互)
-├── plugin 插件导出 (openclaw 集成)
-└── 各模块单元测试全绿 ✅  ← NEW
+Phase 5: 集成 🚧 IN PROGRESS
+├── FukaBrain 统一调度（基础框架）
+├── plugin 插件导出（openclaw 集成）✅
+├── InterestMatcher.findMatches() → 需 repository 支持
+├── ProfileGenerator 完整接入 → 需 PrismaClient
+└── LLM mock → 真实 API
 ```
 
-## Demo 演示命令
+### 7.2 待完成功能
 
-```bash
-# 承诺追踪 — 追问流程（镜头 2）
-pnpm test -- 'PromiseTracker/__tests__/index' --verbose
+| 功能 | 位置 | 状态 |
+|------|------|------|
+| InterestMatcher.findMatches | matcher.ts | 需 repository 支持 |
+| ProfileGenerator 完整接入 | FukaBrain.ts | 需注入 PrismaClient |
+| TriggerEngine 时间触发 | trigger/engine.ts | 定时扫描部分实现 |
+| LLM 真正调用 | llm/client.ts | 当前是 mock |
 
-# 承诺追踪 — 提取器单元测试
-pnpm demo:promise
+---
 
-# 兴趣匹配 — 标签权重测试（镜头 3）
-pnpm demo:interest
+## 8. 附录
 
-# 人物侧写 — 置信度计算（镜头 4）
-pnpm demo:profile:conf
+## 8. 附录
 
-# 人物侧写 — 活跃时段分析
-pnpm demo:profile:analyze
+### 8.1 技术选型
 
-# 全部跑一遍
-pnpm demo
+| 类别 | 选型 | 理由 |
+|------|------|------|
+| 语言 | TypeScript | 类型安全，生态成熟 |
+| 数据库 | SQLite + Prisma | 本地开发友好，轻量 |
+| LLM | OpenAI GPT 系列 | 可通过环境变量配置 |
+| 测试 | Jest | 单元测试框架 |
+| 插件框架 | OpenClaw Plugin SDK | QQ Agent 运行时，支持 plugin 模式 |
+
+### 8.2 配置化支持
+
+Fuka 通过 OpenClaw 配置系统支持多种配置格式：
+
+#### TOML 配置（推荐）
+
+```toml
+# openclaw.config.toml
+[plugins.fuka]
+llm_provider = "openai"
+llm_model = "gpt-4"
+llm_api_key = "${API_KEY}"  # 支持环境变量引用
+
+[plugins.fuka.promise]
+enabled = true
+default_reminder_mins = 60  # 提前多少分钟提醒
+
+[plugins.fuka.interest]
+enabled = true
+match_window_hours = 72     # 匹配时间窗口
+
+[plugins.fuka.profile]
+enabled = true
+min_messages_for_profile = 10
 ```
 
-## 快速开始
+#### JavaScript 配置
+
+```javascript
+// openclaw.config.js
+export default {
+  plugins: [
+    fukaPlugin({
+      llm_provider: 'openai',
+      llm_model: 'gpt-4',
+      promise: {
+        enabled: true,
+        default_reminder_mins: 60,
+      },
+      interest: {
+        enabled: true,
+        match_window_hours: 72,
+      },
+      profile: {
+        enabled: true,
+        min_messages_for_profile: 10,
+      }
+    })
+  ]
+}
+```
+
+#### 环境变量
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `API_KEY` | `mock` | LLM API 密钥 |
+| `LLM_PROVIDER` | `openai` | LLM 服务商 |
+| `LLM_MODEL_NAME` | `gpt-4` | LLM 模型名称 |
+| `QQ_BOT_TOKEN` | — | QQ 机器人 Token |
+
+### 8.4 参赛信息
+
+- **赛事**：腾讯 PCG 校园 AI 产品创意大赛
+- **赛题**：赛题 3 — 用 AI 玩转 QQ 养虾，解锁社交新玩法
+- **核心要求**：官方 Agent（非工具化）、主动感知理解、全场景贯穿（单聊/群聊/动态）、被动→主动关怀
+
+### 8.5 快速开始
 
 ```bash
-cd fuka
-
 # 安装依赖
 pnpm install
 
 # 数据库迁移
 pnpm run db:migrate
 
-# 构建（TypeScript → JavaScript）
+# 构建
 pnpm run build
 
 # 运行 CLI
 pnpm run cli
 
-# 代码检查
-pnpm run lint
-pnpm run lint:fix
-
 # 运行测试
 pnpm test
-pnpm run test:PromiseTracker
-pnpm run test:InterestGraph
-pnpm run test:ProfileGen
-
-# 项目健康检查
-pnpm run health
-pnpm run audit
 ```
 
-## 技术选型
+---
 
-- **语言**：TypeScript (ESNext)
-- **数据库**：SQLite（Prisma + libsql，本地开发友好）
-- **ORM**：Prisma
-- **LLM**：OpenAI GPT 系列（可通过 `MODEL_NAME` / `API_KEY` 环境变量配置）
-- **测试**：Jest
-
-## 参赛信息
-
-- **赛事**：腾讯 PCG 校园 AI 产品创意大赛
-- **赛题**：赛题 3 - 用 AI 玩转 QQ 养虾，解锁社交新玩法
-- **核心要求**：官方 Agent（非工具化）、主动感知理解、全场景贯穿（单聊/群聊/动态）、被动→主动关怀
-
-## 环境变量
-
-| 变量 | 默认值 | 说明 |
-|------|--------|------|
-| `API_KEY` | `mock` | LLM API 密钥 |
-| `MODEL_NAME` | `gpt-4` | LLM 模型名称 |
+*最后更新：2026 年 5 月*

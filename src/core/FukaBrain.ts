@@ -18,6 +18,9 @@ export class FukaBrain {
   private promiseTracker: PromiseTracker;
   private promiseStorage: PromiseStorage;
   private promiseNotifier: PromiseNotifier;
+  private interestTagger: InterestTagger;
+  private interestMatcher: InterestMatcher;
+  private interestNotifier: InterestNotifier;
 
   constructor(config: FukaConfig) {
     this.config = config;
@@ -28,6 +31,9 @@ export class FukaBrain {
     this.promiseStorage = new PromiseStorage();
     this.promiseNotifier = new PromiseNotifier();
     this.promiseTracker = new PromiseTracker(this.promiseStorage);
+    this.interestTagger = new InterestTagger();
+    this.interestMatcher = new InterestMatcher();
+    this.interestNotifier = new InterestNotifier();
     this.trigger.setDeps(this.promiseStorage, this.promiseNotifier);
   }
 
@@ -106,13 +112,40 @@ export class FukaBrain {
   }
 
   private async handleInterest(message: Message, parsed: ParsedMessage): Promise<FukaResponse> {
-    // TODO: use InterestTagger / InterestMatcher
-    return this.makeResponse('哦，你对这个感兴趣啊～', 'interest', parsed.confidence);
+    const tags = await this.interestTagger.extract(message);
+    if (tags.length === 0) {
+      return this.makeResponse('没识别到兴趣点～', 'interest', parsed.confidence);
+    }
+
+    const topTag = tags.reduce((a, b) => (a.weight > b.weight ? a : b));
+    const matches = await this.interestMatcher.findMatches(
+      message.groupId ?? 'default',
+      message.userId
+    );
+
+    if (matches.length === 0) {
+      return this.makeResponse(
+        `哦？你对「${topTag.topic}」感兴趣啊～`,
+        'interest',
+        parsed.confidence
+      );
+    }
+
+    const match = matches[0];
+    return this.makeResponse(
+      `发现你们都喜欢「${match.sharedTopics.join('、')}」～要不要认识一下？`,
+      'interest_match',
+      parsed.confidence
+    );
   }
 
   private async handleProfileQuery(message: Message, parsed: ParsedMessage): Promise<FukaResponse> {
-    // TODO: use ProfileGenerator
-    return this.makeResponse('让我想想你是怎样的人～', 'profile_query', parsed.confidence);
+    const targetPerson = parsed.entities.targetPerson ?? message.userId;
+    return this.makeResponse(
+      `让我想想「${targetPerson}」是什么样的人～`,
+      'profile_query',
+      parsed.confidence
+    );
   }
 
   private makeResponse(text: string, intent: string, confidence: number): FukaResponse {

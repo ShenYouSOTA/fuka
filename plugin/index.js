@@ -1,6 +1,6 @@
 import { definePluginEntry } from 'openclaw/plugin-sdk/plugin-entry';
 import { LLMClient } from '../src/llm/client.js';
-import { MessagePipeline } from '../src/trigger/message.js';
+import { MessagePipeline } from '../src/pipeline/message.js';
 
 export default definePluginEntry({
   id: 'fuka',

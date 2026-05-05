@@ -62,11 +62,10 @@ pnpm test -- 'PromiseTracker/__tests__/index' --verbose
 ```
 
 **口播**：
-> "场景一，承诺追踪。
-> 用户说'记得提醒我健身'，Fuka 自动进入追问流程：
-> '发给谁？''什么时候提醒？'
-> 填完所有字段后，承诺存储并设置触发时间，到期自动提醒。
-> 这是完整的对话式承诺创建流程。"
+> "承诺追踪，这是现在唯一跑通了的场景。
+> 用户说'记得提醒我健身'，Fuka 马上跟进：'发给谁？''什么时候？'
+> 用户回答完，承诺存进数据库，定时触发，到期推送。
+> 中间经历多轮对话、意图识别、存储——这些都跑通了。"
 
 ---
 
@@ -86,11 +85,11 @@ pnpm test -- --testPathPattern=InterestGraph/tagger --verbose
 ```
 
 **口播**：
-> "场景二，兴趣匹配。
-> Fuka 持续分析群消息，提取每个人的兴趣标签。
-> 当两个人的兴趣标签重叠率高时，触发匹配推荐——
-> '小王和你都喜欢 Rust，已为你们创建认识机会'。
-> 群消息不用刷，缘分自然来。"
+> "兴趣匹配。代码基本写完了，但还没完全接进 FukaBrain。
+> InterestTagger：群消息进来，自动打标签，比如提到 Rust、Python 就打个'编程'。
+> InterestNotifier：理论上能推送，但现在 brain 传空值，推不了。
+> InterestMatcher：findMatches 直接 throw NotImplemented，还没写。
+> 跑这个 tagger 测试能过，说明匹配逻辑本身是对的——只是数据库那层还没接上。"
 
 ---
 
@@ -110,12 +109,11 @@ pnpm test -- --testPathPattern=ProfileGen --testNamePattern="ConfidenceCalculato
 ```
 
 **口播**：
-> "场景三，人物侧写。
-> 当你想了解群里的某个人时，Fuka 分析他历史发言的：
-> 活跃时段、话题偏好、发言频率。
-> 生成一句话侧写，并给出置信度——
-> '小明，技术向，白天沉默，晚上活跃，置信度中等'。
-> 三句话就认识一个人，登场有底气。"
+> "人物侧写。三个子模块各写各的，但都没有真正接进 FukaBrain。
+> ProfileAnalyzer：统计活跃时段，看这个人几点上线。
+> ProfileGenerator：调 LLM 生成文字，但 LLM 现在是桩。
+> ConfidenceCalculator：这个测试在验证置信度公式——消息越多、窗口越近，分数越高。
+> FukaBrain.handleProfileQuery 目前只有一行占位：'让我想想你是怎样的人～'。需要 PrismaClient 才能真正跑通。"
 
 ---
 
@@ -137,22 +135,20 @@ src/modules/
 ```
 
 **口播**：
-> "三个模块各自独立，又通过 FukaBrain 统一调度。
-> FukaBrain 是核心决策层：
-> 接收消息 → LLM 解析意图 → 分发到对应模块 → 返回结构化响应。
-> 数据统一存在 SQLite 里，Prisma ORM 管理。
-> 架构简单，但扩展性很强。"
+> "架构上三个场景各自独立：PromiseTracker 管承诺，InterestGraph 管兴趣，ProfileGen 管侧写。
+> 目前只有 PromiseTracker 真正接通了 FukaBrain。handleInterest 虽然调了 InterestTagger，但 matcher 那块没写，通知链等于断了。handleProfileQuery 是占位状态。
+> 数据库是 SQLite 加 Prisma，但 ProfileGen 需要的 PrismaClient 还没传进去。LLM client 也是 mock。
+> 结构是对的，缺的是收尾那几步。"
 
 ---
 
 ### 镜头 6：下一步（2:35–3:00）
 
 **口播**：
-> "目前已完成三个核心场景的模块开发。
-> 接下来需要接入真实的 QQ 消息流——
-> 通过 go-cqhttp 或 NapCat 的 WebSocket API，
-> 把消息实时接入 FukaBrain。
-> 接入后，Fuka 就能真正做到主动服务。"
+> "现状：Phase 5 集成中，三个场景代码都写完了，但只有场景1完全跑通。
+> 接下来先把 InterestMatcher 和 ProfileGen 真正接进去——需要 repository 层和 PrismaClient。
+> 然后把 LLM mock 换成真实调用，意图解析和侧写生成才能真正 work。
+> 这两件事搞定之后，再接 QQ 机器人消息流（go-cqhttp 或者 NapCat WebSocket），Fuka 就能真正主动服务了。"
 
 **画面**：可以是终端里打印一行：
 
@@ -188,9 +184,8 @@ pnpm demo
 
 ## 备选方案：纯 CLI 演示
 
-> 如果评委更希望看"界面"而非"测试"，可以把测试换成 CLI demo 脚本。
-> 需要改动 `cli/index.js`，增加 `--demo promise` / `--demo interest` / `--demo profile` 模式。
-> （当前为后续开发计划，需要补完 FukaBrain 中的 handleInterest 和 handleProfileQuery TODO）
+> 如果评委想看界面而不是测试，可以改 CLI 加 `--demo promise` 这类模式。
+> 现在 FukaBrain.handlePromise 已经完整；handleInterest 调了 InterestTagger，matcher 那块还没写；handleProfileQuery 是占位。"
 
 ---
 
@@ -199,4 +194,24 @@ pnpm demo
 - **比赛赛道**：赛题 3 — 用 AI 玩转 QQ 养虾，核心考察 Agent 主动性 + 场景贯穿
 - **开源发布**：.ospec/ 等开发工具不进入开源包（已加入 .gitignore）
 - **Demo 载体**：Jest 测试输出 + 口播解说，兼顾"代码能跑"和"叙事清晰"
-- **下一步**：接入 QQ 机器人真实消息流（go-cqhttp / NapCat WebSocket）
+- **当前接入状态**：
+  - PromiseTracker → FukaBrain.handlePromise ✅ 完整接通
+  - InterestGraph → FukaBrain.handleInterest 🔶 部分接通（InterestTagger 可用，Matcher 未实现）
+  - ProfileGen → FukaBrain.handleProfileQuery 🔶 占位代码，待注入 PrismaClient
+- **下一步**：完成剩余两个 handle 方法 → 换掉 LLM mock → 接入 QQ 机器人消息流
+
+---
+
+## 项目状态概览（演示前必读）
+
+| 模块 | 代码 | 接入 | 现状 |
+|------|------|------|------|
+| PromiseTracker | 完成 | ✅ 全通 | 多轮追问、存储、触发链路跑通 |
+| InterestTagger | 完成 | ✅ 调用 | tagger 测试全绿 |
+| InterestMatcher | 有代码 | ❌ | findMatches throw，还没写 |
+| InterestNotifier | 完成 | 🔶 | brain 参数可选但未传，通知链断 |
+| ProfileGenerator | 有代码 | ❌ | handleProfileQuery 是占位，缺 PrismaClient |
+| ProfileAnalyzer | 完成 | 🔶 | 未接入，只跑单元测试 |
+| ConfidenceCalculator | 完成 | 🔶 | 未接入，只跑单元测试 |
+| LLMClient | mock | 🔶 | parseMessage 可用，generate 是桩 |
+| MessagePipeline | 完成 | ✅ | start/stop 可用，接入基础设施 |
