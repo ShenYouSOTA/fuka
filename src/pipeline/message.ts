@@ -30,7 +30,7 @@ export class MessagePipeline {
   }
 }
 
-export class MessageParser {
+class MessageParser {
   parse(raw: Message): ParsedMessage {
     // TODO: implement with LLM
     throw new Error('Not implemented');

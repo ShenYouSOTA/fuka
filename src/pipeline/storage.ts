@@ -22,7 +22,7 @@ export class MessageStorage {
   }
 }
 
-export class PromiseStorage {
+class PromiseStorage {
   private repo = new SqlitePromiseRepository();
 
   async save(promise: {
@@ -51,7 +51,7 @@ export class PromiseStorage {
   }
 }
 
-export class InterestStorage {
+class InterestStorage {
   private repo = new SqliteInterestRepository();
 
   async upsertTopic(userId: string, groupId: string, topic: string, weight?: number): Promise<void> {
@@ -75,7 +75,7 @@ export class InterestStorage {
   }
 }
 
-export class ProfileStorage {
+class ProfileStorage {
   private repo = new SqliteProfileRepository();
 
   async saveProfile(profile: {

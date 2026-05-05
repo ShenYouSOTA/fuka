@@ -49,13 +49,16 @@
 **运行命令**：
 
 ```bash
-pnpm test -- --testPathPattern=PromiseTracker/index --testNamePattern="follow-up flow follows content → target → due_time" --verbose
+pnpm test -- 'PromiseTracker/__tests__/index' --verbose
 ```
 
 **输出示例**（Jest 会高亮 PASS）：
 
 ```
-✓ follow-up flow follows content → target → due_time via DEFER_CHOICE
+✓ returns 追问 when content is missing
+✓ asks next field even when first message has some info
+✓ continues context when user says 不要 via DEFER_CHOICE
+✓ starts new context when user says 好 via DEFER_CHOICE
 ```
 
 **口播**：
@@ -162,7 +165,10 @@ FukaBrain.start()  // 等待 QQ 消息接入...
 ## 命令汇总（快速复制）
 
 ```bash
-# 承诺追踪
+# 承诺追踪 — 追问流程
+pnpm test -- 'PromiseTracker/__tests__/index' --verbose
+
+# 承诺追踪 — 提取器单元测试
 pnpm demo:promise
 
 # 兴趣匹配

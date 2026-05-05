@@ -79,6 +79,8 @@ fuka/
 ├── README.md
 ├── cli/
 │   └── index.js                # 终端入口
+├── plugin/
+│   └── index.js                # OpenClaw 插件入口  ← NEW
 ├── prisma/
 │   ├── schema.prisma            # Prisma schema（SQLite）
 │   └── fuka.db                 # SQLite 数据库文件
@@ -141,27 +143,49 @@ Phase 1: 基础设施 ✅
 └── LLM Interface (消息解析 / 提取 / 生成)
 
 Phase 2: 场景 1 - PromiseTracker ✅
-├── PromiseExtractor
+├── PromiseExtractor (承诺提取)
 ├── PromiseStorage + DueCheck
 ├── TriggerEngine (定时提醒)
-└── FukaBrain → 提醒回复
+└── PromiseTracker 追问流程已测试
 
 Phase 3: 场景 2 - InterestGraph ✅
-├── InterestTagger
-├── InterestMatcher
-├── MatchNotifier
-└── FukaBrain → 匹配推荐
+├── InterestTagger (兴趣标签提取 + 权重衰减)
+├── InterestMatcher (同好匹配)
+└── InterestNotifier (匹配通知)
 
 Phase 4: 场景 3 - ProfileGenerator ✅
-├── ProfileAnalyzer
-├── ProfileGenerator
-├── ConfidenceCalculator
-└── FukaBrain → 侧写查询
+├── ProfileAnalyzer (活跃时段分析)
+├── ProfileGenerator (侧写生成)
+├── ConfidenceCalculator (置信度评估)
+└── ProfileGen 各子模块已测试
 
 Phase 5: 集成 + CLI ✅
-├── FukaBrain 统一调度 ✅
-├── CLI 终端界面 ✅
-└── (可选) GUI 可视化面板
+├── FukaBrain 统一调度 (基础框架)
+├── CLI 终端界面 (可交互)
+├── plugin 插件导出 (openclaw 集成)
+└── 各模块单元测试全绿 ✅  ← NEW
+```
+
+## Demo 演示命令
+
+```bash
+# 承诺追踪 — 追问流程（镜头 2）
+pnpm test -- 'PromiseTracker/__tests__/index' --verbose
+
+# 承诺追踪 — 提取器单元测试
+pnpm demo:promise
+
+# 兴趣匹配 — 标签权重测试（镜头 3）
+pnpm demo:interest
+
+# 人物侧写 — 置信度计算（镜头 4）
+pnpm demo:profile:conf
+
+# 人物侧写 — 活跃时段分析
+pnpm demo:profile:analyze
+
+# 全部跑一遍
+pnpm demo
 ```
 
 ## 快速开始

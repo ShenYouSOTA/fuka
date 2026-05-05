@@ -18,7 +18,7 @@ export interface MatchResult {
 }
 
 export class InterestMatcher {
-  async findMatches(groupId: string): Promise<MatchResult[]> {
+  async findMatches(groupId: string, userId: string): Promise<MatchResult[]> {
     // TODO: implement matching logic
     throw new Error('Not implemented');
   }

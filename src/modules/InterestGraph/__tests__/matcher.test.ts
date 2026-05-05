@@ -1,13 +1,5 @@
 import { InterestMatcher, calculateScore } from '../matcher.js';
 
-// Mock repo for pure unit tests
-const mockRepo = {
-  findActive: jest.fn(),
-  findByTopic: jest.fn(),
-  findPending: jest.fn(),
-  create: jest.fn(),
-};
-
 describe('calculateScore', () => {
   it('returns 1 for identical topic sets', () => {
     expect(calculateScore(['健身', '音乐'], ['健身', '音乐'])).toBe(1);
@@ -40,7 +32,6 @@ describe('InterestMatcher instance', () => {
   let matcher: InterestMatcher;
 
   beforeEach(() => {
-    jest.clearAllMocks();
     matcher = new InterestMatcher();
   });
 
@@ -50,8 +41,6 @@ describe('InterestMatcher instance', () => {
       expect(matcher.calculateScore(['健身'], ['音乐'])).toBe(0);
     });
   });
-
-  // findMatches tests deferred until repo injection is wired up
 });
 
 describe('InterestMatch state machine', () => {

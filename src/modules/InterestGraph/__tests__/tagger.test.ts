@@ -1,4 +1,4 @@
-import { InterestTagger, type InterestTag } from '../tagger.js';
+import { InterestTagger } from '../tagger.js';
 
 describe('InterestTagger', () => {
   describe('updateWeight', () => {

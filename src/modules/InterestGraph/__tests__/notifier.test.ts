@@ -2,40 +2,39 @@ import { InterestNotifier } from '../notifier.js';
 import type { MatchResult } from '../matcher.js';
 
 describe('InterestNotifier', () => {
-  let notifier: InterestNotifier;
-  let mockBrain: { notify: jest.Mock };
+  describe('notifyMatch', () => {
+    it('calls brain.notify with match and groupId', async () => {
+      let receivedArgs: unknown = null;
+      const mockNotify = async (args: unknown) => { receivedArgs = args; };
+      const notifier = new InterestNotifier({ notify: mockNotify } as any);
 
-  beforeEach(() => {
-    mockBrain = { notify: jest.fn().mockResolvedValue(undefined) };
-    notifier = new InterestNotifier(mockBrain as any);
-  });
+      const match: MatchResult = {
+        userA: 'user1',
+        userB: 'user2',
+        sharedTopics: ['健身', '音乐'],
+        matchScore: 0.75,
+      };
 
-  it('calls brain.notify with match and groupId', async () => {
-    const match: MatchResult = {
-      userA: 'user1',
-      userB: 'user2',
-      sharedTopics: ['健身', '音乐'],
-      matchScore: 0.75,
-    };
+      await notifier.notifyMatch(match, 'group-A');
 
-    await notifier.notifyMatch(match, 'group-A');
-
-    expect(mockBrain.notify).toHaveBeenCalledTimes(1);
-    expect(mockBrain.notify).toHaveBeenCalledWith({
-      type: 'interest_match',
-      payload: { match, groupId: 'group-A' },
+      expect(receivedArgs).toEqual({
+        type: 'interest_match',
+        payload: { match, groupId: 'group-A' },
+      });
     });
-  });
 
-  it('propagates errors from brain.notify', async () => {
-    mockBrain.notify.mockRejectedValue(new Error('QQ offline'));
-    const match: MatchResult = {
-      userA: 'user1',
-      userB: 'user2',
-      sharedTopics: ['健身'],
-      matchScore: 0.8,
-    };
+    it('propagates errors from brain.notify', async () => {
+      const mockNotify = async () => { throw new Error('QQ offline'); };
+      const notifier = new InterestNotifier({ notify: mockNotify } as any);
 
-    await expect(notifier.notifyMatch(match, 'group-A')).rejects.toThrow('QQ offline');
+      const match: MatchResult = {
+        userA: 'user1',
+        userB: 'user2',
+        sharedTopics: ['健身'],
+        matchScore: 0.8,
+      };
+
+      await expect(notifier.notifyMatch(match, 'group-A')).rejects.toThrow('QQ offline');
+    });
   });
 });

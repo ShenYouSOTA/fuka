@@ -8,7 +8,6 @@ import { PromiseExtractor } from './extractor.js';
 import { PromiseNotifier } from './notifier.js';
 import { PromiseStorage } from './storage.js';
 
-export { PromiseExtractor } from './extractor.js';
 export { PromiseNotifier } from './notifier.js';
 export { PromiseStorage } from './storage.js';
 export type { StoredPromise } from './notifier.js';
